@@ -45,7 +45,7 @@ func (c *Il2CppClass) GetMethods() ([]*MethodInfo, error) {
 
 	methodCount := c.class.method_count
 	if methodCount == 0 || c.class.methods == nil {
-		return nil, errNil
+		return c.methods, nil
 	}
 	methodsC := (*[1 << 30]*C.MethodInfo)(unsafe.Pointer(c.class.methods))[:methodCount:methodCount]
 
@@ -91,4 +91,22 @@ func (c *Il2CppClass) GetMethodWhere(fn func(*MethodInfo) bool) (*MethodInfo, er
 	}
 
 	return nil, errNotFound
+}
+
+func (c *Il2CppClass) GetMethodsWhere(fn func(*MethodInfo) bool) ([]*MethodInfo, error) {
+	methods, err := c.GetMethods()
+	if err != nil {
+		return nil, err
+	}
+
+	var methodsFiltered []*MethodInfo
+	for _, method := range methods {
+		if method != nil && method.method != nil {
+			if fn(method) {
+				methodsFiltered = append(methodsFiltered, method)
+			}
+		}
+	}
+
+	return methodsFiltered, nil
 }

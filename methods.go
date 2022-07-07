@@ -298,3 +298,106 @@ func classGetMethods(klass *Il2CppClass, iter *C.intptr_t) (*MethodInfo, error) 
 
 	return newMethod((*C.MethodInfo)(unsafe.Pointer(ret)))
 }
+
+func typeGetName(t *Il2CppType) (string, error) {
+	if t.xType == nil {
+		return "", errNil
+	}
+
+	ret, _, err := il2cpp_type_get_name.Call(
+		uintptr(unsafe.Pointer(t.xType)),
+	)
+
+	if err != syscall.Errno(0) {
+		return "", err
+	}
+
+	if ret == 0 {
+		return "", errors.New("il2cpp_type_get_name failed")
+	}
+
+	return C.GoString((*C.char)(unsafe.Pointer(ret))), nil
+}
+
+func paramGetTypeName(p *ParameterInfo) (string, error) {
+	if p.parameter == nil {
+		return "", errNil
+	}
+
+	ret, _, err := il2cpp_type_get_name.Call(
+		uintptr(unsafe.Pointer(p.parameter)),
+	)
+
+	if err != syscall.Errno(0) {
+		return "", err
+	}
+
+	if ret == 0 {
+		return "", errors.New("il2cpp_type_get_name failed")
+	}
+
+	return C.GoString((*C.char)(unsafe.Pointer(ret))), nil
+}
+
+func methodGetParam(method *MethodInfo, index uint32) (*ParameterInfo, error) {
+	if method.method == nil {
+		return nil, errNil
+	}
+
+	ret, _, err := il2cpp_method_get_param.Call(
+		uintptr(unsafe.Pointer(method.method)),
+		uintptr(index),
+	)
+
+	if err != syscall.Errno(0) {
+		return nil, err
+	}
+
+	if ret == 0 {
+		return nil, errors.New("il2cpp_method_get_param failed")
+	}
+
+	name, err := methodGetParamName(method, index)
+	if err != nil {
+		return nil, err
+	}
+
+	return newParam((*C.ParameterInfo)(unsafe.Pointer(ret)), name)
+}
+
+func methodGetParamCount(method *MethodInfo) (uint32, error) {
+	if method.method == nil {
+		return 0, errNil
+	}
+
+	ret, _, err := il2cpp_method_get_param_count.Call(
+		uintptr(unsafe.Pointer(method.method)),
+	)
+
+	if err != syscall.Errno(0) {
+		return 0, err
+	}
+
+	return uint32(ret), nil
+}
+
+func methodGetParamName(method *MethodInfo, index uint32) (string, error) {
+	if method.method == nil {
+		return "", errNil
+	}
+
+	ret, _, err := il2cpp_method_get_param_name.Call(
+		uintptr(unsafe.Pointer(method.method)),
+		uintptr(index),
+	)
+
+	if err != syscall.Errno(0) {
+		return "", err
+	}
+
+	if ret == 0 {
+		return "", errors.New("il2cpp_method_get_param_name failed")
+	}
+
+	return C.GoString((*C.char)(unsafe.Pointer(ret))), nil
+}

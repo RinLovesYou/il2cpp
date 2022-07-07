@@ -52,6 +52,25 @@ func (i *Il2CppImage) GetClassWhere(fn func(*Il2CppClass) bool) (*Il2CppClass, e
 	return nil, errNotFound
 }
 
+func (i *Il2CppImage) GetClassesWhere(fn func(*Il2CppClass) bool) ([]*Il2CppClass, error) {
+	var classes []*Il2CppClass
+	for _, class := range i.Classes {
+		if class == nil {
+			continue
+		}
+
+		if class.class == nil {
+			continue
+		}
+
+		if fn(class) {
+			classes = append(classes, class)
+		}
+	}
+
+	return classes, nil
+}
+
 func (i *Il2CppImage) getName() (name, nameNoExt string, err error) {
 	if i.image == nil || i.image.name == nil || i.image.nameNoExt == nil {
 		return "", "", errNil
