@@ -10,7 +10,7 @@ As a quick example, here we'll get an image, and print out every Class, its meth
 package main
 
 import (
-	"GoMod/il2cpp"
+	"github.com/RinLovesYou/il2cpp"
 	"fmt"
 )
 
