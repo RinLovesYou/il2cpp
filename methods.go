@@ -2,6 +2,7 @@ package il2cpp
 
 /*
 #include <stdlib.h>
+#include <stdbool.h>
 #include "il2cpp_structs.h"
 */
 import "C"
@@ -10,6 +11,9 @@ import (
 	"syscall"
 	"unsafe"
 )
+
+var errNil = errors.New("nil")
+var errNotFound = errors.New("not found")
 
 var (
 	gameAssembly = syscall.NewLazyDLL("GameAssembly.dll")
@@ -115,10 +119,16 @@ func Init(domainName string) (int, error) {
 		return 0, errors.New("il2cpp_init failed")
 	}
 
-	return *(*int)(unsafe.Pointer(ret)), nil
+	return *(*int)(unsafe.Pointer(&ret)), nil
 }
 
+var domain *Il2CppDomain
+
 func GetDomain() (*Il2CppDomain, error) {
+	if domain != nil {
+		return domain, nil
+	}
+
 	ret, _, err := il2cpp_domain_get.Call()
 	if err != syscall.Errno(0) {
 		return nil, err
@@ -128,9 +138,163 @@ func GetDomain() (*Il2CppDomain, error) {
 		return nil, errors.New("il2cpp_domain_get failed")
 	}
 
-	domain := (*C.Il2CppDomain)(unsafe.Pointer(ret))
+	domain, err = newDomain((*C.Il2CppDomain)(unsafe.Pointer(ret)))
 
-	return &Il2CppDomain{
-		domain,
-	}, nil
+	return domain, err
+}
+
+func GetImage(name string) (*Il2CppImage, error) {
+	domain, err := GetDomain()
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.GetImage(name)
+}
+
+func threadAttach(d *Il2CppDomain) error {
+	if d.domain == nil {
+		return errNil
+	}
+
+	ret, _, err := il2cpp_thread_attach.Call(uintptr(unsafe.Pointer(d.domain)))
+	if err != syscall.Errno(0) {
+		return err
+	}
+
+	if ret == 0 {
+		return errors.New("il2cpp_thread_attach failed")
+	}
+
+	return nil
+}
+
+func domainGetAssemblies(d *Il2CppDomain, assemblyCount *uint64) ([]*Il2CppAssembly, error) {
+	if d.domain == nil {
+		return nil, errNil
+	}
+
+	ret, _, err := il2cpp_domain_get_assemblies.Call(
+		uintptr(unsafe.Pointer(d.domain)),
+		uintptr(unsafe.Pointer(assemblyCount)),
+	)
+
+	if err != syscall.Errno(0) {
+		return nil, err
+	}
+
+	if ret == 0 {
+		return nil, errors.New("il2cpp_domain_get_assemblies failed")
+	}
+
+	assembliesPtr := (**C.Il2CppAssembly)(unsafe.Pointer(ret))
+
+	if *assemblyCount == 0 || assembliesPtr == nil {
+		return nil, errNil
+	}
+
+	assembliesC := (*[1 << 30]*C.Il2CppAssembly)(unsafe.Pointer(assembliesPtr))[:*assemblyCount:*assemblyCount]
+
+	assemblies := make([]*Il2CppAssembly, *assemblyCount)
+	for i, assembly := range assembliesC {
+		assemblies[i], err = newAssembly(assembly)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return assemblies, nil
+}
+
+func imageGetClassCount(image *Il2CppImage) (uint64, error) {
+	if image.image == nil {
+		return 0, errNil
+	}
+
+	ret, _, err := il2cpp_image_get_class_count.Call(
+		uintptr(unsafe.Pointer(image.image)),
+	)
+	if err != syscall.Errno(0) {
+		return 0, err
+	}
+
+	if ret == 0 {
+		return 0, errors.New("il2cpp_image_get_class_count failed")
+	}
+
+	return uint64(ret), nil
+}
+
+func imageGetClass(image *Il2CppImage, index uint64) (*Il2CppClass, error) {
+	if image.image == nil {
+		return nil, errNil
+	}
+
+	ret, _, err := il2cpp_image_get_class.Call(
+		uintptr(unsafe.Pointer(image.image)),
+		uintptr(index),
+	)
+	if err != syscall.Errno(0) {
+		return nil, err
+	}
+
+	if ret == 0 {
+		return nil, errors.New("il2cpp_image_get_class failed")
+	}
+
+	return newClass((*C.Il2CppClass)(unsafe.Pointer(ret)))
+}
+
+func gcHandleNew(obj *Il2CppObject, pinned bool) (uint32, error) {
+	if obj.object == nil {
+		return 0, errNil
+	}
+
+	pinnedPtr := uintptr(0)
+	if pinned {
+		pinnedPtr = 1
+	}
+
+	ret, _, err := il2cpp_gchandle_new.Call(
+		uintptr(unsafe.Pointer(obj.object)),
+		pinnedPtr,
+	)
+	if err != syscall.Errno(0) {
+		return 0, err
+	}
+
+	if ret == 0 {
+		return 0, errors.New("il2cpp_gc_handle_new failed")
+	}
+
+	return uint32(ret), nil
+}
+
+func gcHandleFree(handle uint32) error {
+	_, _, err := il2cpp_gchandle_free.Call(uintptr(handle))
+	if err != syscall.Errno(0) {
+		return err
+	}
+
+	return nil
+}
+
+func classGetMethods(klass *Il2CppClass, iter *C.intptr_t) (*MethodInfo, error) {
+	if klass.class == nil || iter == nil {
+		return nil, errNil
+	}
+
+	ret, _, err := il2cpp_class_get_methods.Call(
+		uintptr(unsafe.Pointer(klass.class)),
+		uintptr(unsafe.Pointer(iter)),
+	)
+	if err != syscall.Errno(0) {
+		return nil, err
+	}
+
+	if ret == 0 {
+		return nil, errors.New("il2cpp_class_get_methods failed")
+	}
+
+	return newMethod((*C.MethodInfo)(unsafe.Pointer(ret)))
 }
