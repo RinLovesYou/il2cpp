@@ -1,82 +1,77 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Domain.h"
 import "C"
+import (
+	"fmt"
+	"unsafe"
+)
 
-type Il2CppDomain struct {
-	domain *C.Il2CppDomain
+type Domain struct {
+	handle C.IppDomain
 
-	Name   string
-	Images []*Il2CppImage
+	name       string
+	assemblies []Assembly
+	images     []Image
 }
 
-func newDomain(d *C.Il2CppDomain) (*Il2CppDomain, error) {
-	if d == nil {
-		return nil, errNil
+func GetDomain() *Domain {
+	return &Domain{
+		handle: C.ippGetDomain(),
+	}
+}
+
+func (d *Domain) Name() string {
+	if d.name != "" {
+		return d.name
+	}
+	d.name = C.GoString(C.ippGetDomainName(d.handle))
+
+	return d.name
+}
+
+func (d *Domain) AttachThread() {
+	C.ippAttachThread(d.handle)
+}
+
+func (d *Domain) GetAssemblies() []Assembly {
+	var size C.size_t
+	asms := C.ippGetDomainAssemblies(d.handle, &size)
+
+	assemblies := (*[1 << 30]C.IppAssembly)(unsafe.Pointer(asms))[:size:size]
+
+	asms_go := make([]Assembly, size)
+	for i, asm := range assemblies {
+		asms_go[i] = Assembly(asm)
 	}
 
-	var err error
+	return asms_go
+}
 
-	domain := &Il2CppDomain{domain: d}
-	domain.Name, err = domain.getName()
-	if err != nil {
-		return nil, err
+func (d *Domain) GetImages() []Image {
+	assemblies := d.GetAssemblies()
+	size := len(assemblies)
+
+	images := make([]Image, size)
+	for i, asm := range assemblies {
+		images[i] = asm.GetImage()
 	}
-	domain.Images, err = domain.getImages()
 
-	return domain, err
+	return images
 }
 
-func (d *Il2CppDomain) ThreadAttach() error {
-	return threadAttach(d)
-}
-
-func (d *Il2CppDomain) GetImage(name string) (*Il2CppImage, error) {
-	return d.GetImageWhere(func(i *Il2CppImage) bool {
-		return i.NameNoExt == name
+func (d *Domain) GetImage(name string) (Image, error) {
+	return d.GetImageWhere(func(image Image) bool {
+		return image.GetName() == name
 	})
 }
 
-func (d *Il2CppDomain) GetImageWhere(fn func(i *Il2CppImage) bool) (*Il2CppImage, error) {
-	for _, image := range d.Images {
-		if image != nil && image.image != nil {
-			if fn(image) {
-				return image, nil
-			}
+func (d *Domain) GetImageWhere(predicate func(Image) bool) (Image, error) {
+	for _, image := range d.GetImages() {
+		if predicate(image) {
+			return image, nil
 		}
 	}
 
-	return nil, errNotFound
-}
-
-func (d *Il2CppDomain) getName() (string, error) {
-	if d.domain == nil || d.domain.friendly_name == nil {
-		return "", errNil
-	}
-
-	return C.GoString(d.domain.friendly_name), nil
-}
-
-func (d *Il2CppDomain) getImages() ([]*Il2CppImage, error) {
-	d.ThreadAttach()
-
-	assemblyCount := uint64(0)
-	assemblies, err := domainGetAssemblies(d, &assemblyCount)
-	if err != nil {
-		return nil, err
-	}
-
-	images := make([]*Il2CppImage, assemblyCount)
-	for i, assembly := range assemblies {
-		if assembly == nil || assembly.assembly.image == nil {
-			continue
-		}
-
-		images[i], err = newImage(assembly.assembly.image)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return images, nil
+	return Image{}, fmt.Errorf("image not found")
 }

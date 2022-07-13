@@ -1,8 +1,10 @@
 package il2cpp
 
-import "testing"
+import (
+	"testing"
+)
 
-// Simply here so i can refresh cgo type definitions :)
-func TestMe(t *testing.T) {
-
+//This function is purely here to refresh cgo definitions.
+func TestCgo(t *testing.T) {
+	t.Log("Hello, world!")
 }

@@ -1,58 +1,69 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Method.h"
 import "C"
-import "unsafe"
+import (
+	"fmt"
+	"unsafe"
+)
 
-type MethodInfo struct {
-	method *C.MethodInfo
-
-	Name       string
-	Parameters []*ParameterInfo
+type Method struct {
+	handle C.IppMethod
 }
 
-func newMethod(m *C.MethodInfo) (*MethodInfo, error) {
-	if m == nil {
-		return nil, errNil
+func (m *Method) GetName() string {
+	if m.handle == nil {
+		return ""
 	}
 
-	var err error
+	return C.GoString(C.ippGetMethodName(m.handle))
+}
 
-	method := &MethodInfo{method: m}
-	method.Name, err = method.getName()
-	if err != nil {
-		return nil, err
-	}
-	method.Parameters = make([]*ParameterInfo, 0)
+func (m *Method) IsNull() bool {
+	return m.handle == nil
+}
 
-	paramCount, err := methodGetParamCount(method)
-	if err != nil {
-		return nil, err
+func (m *Method) GetReturnType() Type {
+	return Type{
+		handle: C.ippGetMethodReturnType(m.handle),
 	}
-	for i := uint32(0); i < paramCount; i++ {
-		param, err := methodGetParam(method, uint32(i))
-		if err != nil {
-			continue
+}
+
+func (m *Method) GetParams() []Type {
+	paramCount := C.ippGetMethodParamCount(m.handle)
+	params := make([]Type, paramCount)
+	for i := 0; i < int(paramCount); i++ {
+		params[i] = Type{
+			handle: C.ippGetMethodParam(m.handle, C.uint(i)),
 		}
-
-		method.Parameters = append(method.Parameters, param)
 	}
 
-	return method, nil
+	return params
 }
 
-func (m *MethodInfo) getName() (string, error) {
-	if m.method == nil || m.method.name == nil {
-		return "", errNil
-	}
-
-	return C.GoString(m.method.name), nil
+func (m *Method) Pointer() uintptr {
+	return uintptr(C.ippGetMethodPtr(m.handle))
 }
 
-func (m *MethodInfo) GetPointer() (uintptr, error) {
-	if m.method == nil || m.method.methodPointer == nil {
-		return 0, errNil
+func (m *Method) Invoke(args ...uintptr) (Object, error) {
+	var argss unsafe.Pointer
+	if len(args) > 0 {
+		argss = unsafe.Pointer(&args[0])
+	}
+	res := C.ippInvokeMethod(m.handle, nil, argss)
+	if res == nil {
+		return Object{}, fmt.Errorf("failed to invoke method")
 	}
 
-	return uintptr(unsafe.Pointer(m.method.methodPointer)), nil
+	return Object{
+		handle: res,
+	}, nil
+}
+
+func (m *Method) InvokeObject(obj *Object) (*Object, error) {
+	res := C.ippInvokeMethod(m.handle, obj.handle, nil)
+
+	return &Object{
+		handle: res,
+	}, nil
 }

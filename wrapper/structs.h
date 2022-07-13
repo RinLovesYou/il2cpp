@@ -1,4 +1,10 @@
-#include "stdint.h"
+#pragma once
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct Il2CppClass Il2CppClass;
 typedef struct Il2CppType Il2CppType;
@@ -1054,8 +1060,8 @@ typedef struct PropertyInfo
 {
     Il2CppClass *parent;
     const char *name;
-    const MethodInfo *get;
-    const MethodInfo *set;
+    MethodInfo *get;
+    MethodInfo *set;
     uint32_t attrs;
     uint32_t token;
 } PropertyInfo;
@@ -2288,3 +2294,7 @@ typedef union Il2CppSingle_float
     Il2CppSingle s;
     float f;
 } Il2CppSingle_float;
+
+#ifdef __cplusplus
+}
+#endif

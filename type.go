@@ -1,27 +1,16 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Type.h"
 import "C"
 
-type Il2CppType struct {
-	xType *C.Il2CppType
-
-	Name string
+type Type struct {
+	handle C.IppType
 }
 
-func newType(xType *C.Il2CppType) (*Il2CppType, error) {
-	if xType == nil {
-		return nil, errNil
+func (t Type) GetName() string {
+	if t.handle == nil {
+		return ""
 	}
 
-	var err error
-
-	t := &Il2CppType{xType: xType}
-	t.Name, err = t.getName()
-
-	return t, err
-}
-
-func (t *Il2CppType) getName() (string, error) {
-	return typeGetName(t)
+	return C.GoString(C.ippGetTypeName(t.handle))
 }

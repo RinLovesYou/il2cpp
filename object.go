@@ -1,26 +1,45 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Object.h"
 import "C"
+import "unsafe"
 
-type Il2CppObject struct {
-	object *C.Il2CppObject
-	handle uint32
+type Object struct {
+	handle   C.IppObject
+	gchandle uint
 }
 
-func newObject(object *C.Il2CppObject) (*Il2CppObject, error) {
-	if object == nil {
-		return nil, errNil
+func NewObject(handle unsafe.Pointer) *Object {
+	if handle == nil {
+		return nil
 	}
 
-	var err error
-
-	obj := &Il2CppObject{object: object}
-	obj.handle, err = gcHandleNew(obj, false)
-
-	return obj, err
+	return &Object{
+		handle: C.IppObject(handle),
+		//gchandle: uint(C.ippNewGcHandle(C.IppObject(handle), C.IppBool(0))),
+	}
 }
 
-func (o *Il2CppObject) Free() error {
-	return gcHandleFree(o.handle)
+func (o *Object) getHandle() C.IppObject {
+	return C.ippGetGcHandleTarget(C.uint(o.gchandle))
+}
+
+func (o *Object) IsNull() bool {
+	return o.handle == nil
+}
+
+func (o *Object) Free() {
+	if o.handle == nil {
+		return
+	}
+
+	C.ippFreeGcHandle(C.uint(o.gchandle))
+}
+
+func (o *Object) UnboxString() string {
+	if o.handle == nil {
+		return ""
+	}
+
+	return C.GoString(C.ippUnboxString(o.handle))
 }

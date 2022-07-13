@@ -1,32 +1,22 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Assembly.h"
 import "C"
 
-type Il2CppAssembly struct {
-	assembly *C.Il2CppAssembly
+type Assembly uintptr
+
+func (a Assembly) handle() C.IppAssembly {
+	return C.IppAssembly(a)
 }
 
-func newAssembly(assembly *C.Il2CppAssembly) (*Il2CppAssembly, error) {
-	if assembly == nil {
-		return nil, errNil
-	}
-
-	return &Il2CppAssembly{assembly: assembly}, nil
+func (a Assembly) GetName() string {
+	return C.GoString(C.ippGetAssemblyName(a.handle()))
 }
 
-func (a *Il2CppAssembly) Name() string {
-	if a.assembly == nil {
-		return ""
+func (a Assembly) GetImage() Image {
+	handle := C.ippGetAssemblyImage(a.handle())
+
+	return Image{
+		handle: handle,
 	}
-
-	return C.GoString(a.assembly.aname.name)
-}
-
-func (a *Il2CppAssembly) Image() (*Il2CppImage, error) {
-	if a.assembly == nil || a.assembly.image == nil {
-		return nil, errNil
-	}
-
-	return newImage(a.assembly.image)
 }

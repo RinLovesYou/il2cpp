@@ -1,102 +1,52 @@
 package il2cpp
 
-//#include "il2cpp_structs.h"
+//#include "wrapper/Image.h"
 import "C"
+import "fmt"
 
-type Il2CppImage struct {
-	image *C.Il2CppImage
-
-	Name      string
-	NameNoExt string
-	Classes   []*Il2CppClass
+type Image struct {
+	handle C.IppImage
 }
 
-func newImage(image *C.Il2CppImage) (*Il2CppImage, error) {
-	if image == nil {
-		return nil, errNil
-	}
-
-	var err error
-
-	img := &Il2CppImage{image: image}
-	img.Name, img.NameNoExt, err = img.getName()
-	if err != nil {
-		return nil, err
-	}
-	img.Classes, err = img.getClasses()
-
-	return img, err
+func (i *Image) GetName() string {
+	return C.GoString(C.ippGetImageName(i.handle))
 }
 
-func (i *Il2CppImage) GetClass(name string) (*Il2CppClass, error) {
-	return i.GetClassWhere(func(c *Il2CppClass) bool {
-		return c.Name == name
+func (i *Image) GetNameExt() string {
+	return C.GoString(C.ippGetImageNameWithExt(i.handle))
+}
+
+func (i *Image) GetClassCount() int {
+	return int(C.ippGetImageClassCount(i.handle))
+}
+
+func (i *Image) GetClasses() []Class {
+	count := i.GetClassCount()
+	classes := make([]Class, count)
+	for j := 0; j < count; j++ {
+		classes[j] = i.getClass(j)
+	}
+	return classes
+}
+
+func (i *Image) getClass(index int) Class {
+	return Class{
+		handle: C.ippGetImageClass(i.handle, C.size_t(index)),
+	}
+}
+
+func (i *Image) GetClass(name string) (Class, error) {
+	return i.GetClassWhere(func(c Class) bool {
+		return c.GetName() == name
 	})
 }
 
-func (i *Il2CppImage) GetClassWhere(fn func(*Il2CppClass) bool) (*Il2CppClass, error) {
-	for _, class := range i.Classes {
-		if class == nil {
-			continue
-		}
-
-		if class.class == nil {
-			continue
-		}
-
-		if fn(class) {
-			return class, nil
+func (i *Image) GetClassWhere(predicate func(Class) bool) (Class, error) {
+	classes := i.GetClasses()
+	for _, c := range classes {
+		if predicate(c) {
+			return c, nil
 		}
 	}
-
-	return nil, errNotFound
-}
-
-func (i *Il2CppImage) GetClassesWhere(fn func(*Il2CppClass) bool) ([]*Il2CppClass, error) {
-	var classes []*Il2CppClass
-	for _, class := range i.Classes {
-		if class == nil {
-			continue
-		}
-
-		if class.class == nil {
-			continue
-		}
-
-		if fn(class) {
-			classes = append(classes, class)
-		}
-	}
-
-	return classes, nil
-}
-
-func (i *Il2CppImage) getName() (name, nameNoExt string, err error) {
-	if i.image == nil || i.image.name == nil || i.image.nameNoExt == nil {
-		return "", "", errNil
-	}
-
-	return C.GoString(i.image.name), C.GoString(i.image.nameNoExt), nil
-}
-
-func (i *Il2CppImage) getClasses() ([]*Il2CppClass, error) {
-	if i.image == nil {
-		return nil, errNil
-	}
-
-	classCount, err := imageGetClassCount(i)
-	if err != nil {
-		return nil, err
-	}
-
-	classes := make([]*Il2CppClass, classCount)
-	for j := uint64(0); j < classCount; j++ {
-		class, err := imageGetClass(i, j)
-		if err != nil {
-			return nil, err
-		}
-		classes[j] = class
-	}
-
-	return classes, nil
+	return Class{}, fmt.Errorf("class not found")
 }
