@@ -1,6 +1,6 @@
 # A wrapper around il2cpp
 
-[Support Server](https://discord.gg/zgzkyGvTS8)
+[Support Server](https://discord.gg/zgzkyGvTS8) (discord)
 
 ## Quickstart
 First of all, quite importantly, this wrapper makes some assumptions about your environment. It assumes that the current golang binary is a c-shared library<br>
