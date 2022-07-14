@@ -1,12 +1,14 @@
 # A wrapper around il2cpp
 
-[Support Server](https://discord.gg/zgzkyGvTS8)
+[Support Server](https://discord.gg/zgzkyGvTS8) (discord)
 
 ## Quickstart
 First of all, quite importantly, this wrapper makes some assumptions about your environment. It assumes that the current golang binary is a c-shared library<br>
 injected into a Unity process built using il2cpp. It also assumes that the initialization process has gone far enough for all assemblies to be loaded.<br>
 
-As a quick example, here we'll get an image, and print out every Class, its methods, their parameters, and their types
+This wrapper updates as my GoMod project evolves, which you can get in the support server above.
+
+Here is a simple example fetching some metadata about images/classes/methods/properties/fields
 
 ```go
 package main
@@ -17,30 +19,32 @@ import (
 )
 
 func init() {
-	asm, err := il2cpp.GetImage("Assembly-CSharp")
-	if err != nil {
-		fmt.Printf("Failed to find Assembly-CSharp assembly: %s\n", err.Error())
-		return
-	}
+	domain := il2cpp.GetDomain()
+	domain.AttachThread()
 
-	for _, class := range asm.Classes {
-		fmt.Println("class:", class.Name)
-		fmt.Println()
+	for _, image := range domain.GetImages() {
+		utils.Log("Image: %s", image.GetName())
 
-		methods, err := class.GetMethods()
-		if err != nil {
-			fmt.Printf("Failed to get methods for class %s: %s\n", class.Name, err.Error())
-			return
-		}
+		for _, class := range image.GetClasses() {
+			utils.Log("Class: %s", class.GetName())
 
-		for _, method := range methods {
-			fmt.Println("method:", method.Name)
-			fmt.Println()
-
-			for _, param := range method.Parameters {
-				fmt.Println("param:", param.Name, "type:", param.TypeName)
-				fmt.Println()
+			for _, method := range class.GetMethods() {
+				utils.Log("Method: %s", method.GetName())
+				utils.Log("ReturnType: %s", method.GetReturnType().GetName())
+				for _, param := range method.GetParams() {
+					utils.Log("Param: %s", param.GetName())
+				}
 			}
+
+			for _, property := range class.GetProperties() {
+				utils.Log("Property: %s", property.GetName())
+				utils.Log("ReturnType: %s", property.GetGet().GetReturnType().GetName())
+			}
+
+			for _, field := range class.GetFields() {
+				utils.Log("Field: %s", field.GetName())
+			}
+
 		}
 	}
 }
