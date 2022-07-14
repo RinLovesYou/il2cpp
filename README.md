@@ -6,7 +6,9 @@
 First of all, quite importantly, this wrapper makes some assumptions about your environment. It assumes that the current golang binary is a c-shared library<br>
 injected into a Unity process built using il2cpp. It also assumes that the initialization process has gone far enough for all assemblies to be loaded.<br>
 
-As a quick example, here we'll get an image, and print out every Class, its methods, their parameters, and their types
+This wrapper updates as my GoMod project evolves, which you can get in the support server above.
+
+Here is a simple example fetching some metadata about images/classes/methods/properties/fields
 
 ```go
 package main
