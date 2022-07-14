@@ -17,30 +17,32 @@ import (
 )
 
 func init() {
-	asm, err := il2cpp.GetImage("Assembly-CSharp")
-	if err != nil {
-		fmt.Printf("Failed to find Assembly-CSharp assembly: %s\n", err.Error())
-		return
-	}
+	domain := il2cpp.GetDomain()
+	domain.AttachThread()
 
-	for _, class := range asm.Classes {
-		fmt.Println("class:", class.Name)
-		fmt.Println()
+	for _, image := range domain.GetImages() {
+		utils.Log("Image: %s", image.GetName())
 
-		methods, err := class.GetMethods()
-		if err != nil {
-			fmt.Printf("Failed to get methods for class %s: %s\n", class.Name, err.Error())
-			return
-		}
+		for _, class := range image.GetClasses() {
+			utils.Log("Class: %s", class.GetName())
 
-		for _, method := range methods {
-			fmt.Println("method:", method.Name)
-			fmt.Println()
-
-			for _, param := range method.Parameters {
-				fmt.Println("param:", param.Name, "type:", param.TypeName)
-				fmt.Println()
+			for _, method := range class.GetMethods() {
+				utils.Log("Method: %s", method.GetName())
+				utils.Log("ReturnType: %s", method.GetReturnType().GetName())
+				for _, param := range method.GetParams() {
+					utils.Log("Param: %s", param.GetName())
+				}
 			}
+
+			for _, property := range class.GetProperties() {
+				utils.Log("Property: %s", property.GetName())
+				utils.Log("ReturnType: %s", property.GetGet().GetReturnType().GetName())
+			}
+
+			for _, field := range class.GetFields() {
+				utils.Log("Field: %s", field.GetName())
+			}
+
 		}
 	}
 }
