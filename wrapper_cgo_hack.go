@@ -4,5 +4,5 @@
 package il2cpp
 
 import (
-	_ "GoMod/il2cpp/wrapper"
+	_ "github.com/RinLovesYou/il2cpp/wrapper"
 )

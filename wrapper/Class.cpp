@@ -1,6 +1,7 @@
 #include "il2cpp.h"
 
 #include "Class.h"
+#include <stdio.h>
 
 const char* ippGetClassName(IppClass handle) {
     Il2CppClass *class_ = reinterpret_cast<Il2CppClass *>(handle);
@@ -40,4 +41,10 @@ IppField ippGetClassFields(IppClass handle, size_t* iter) {
 IppProperty ippGetClassProperties(IppClass handle, size_t* iter) {
     Il2CppClass *class_ = reinterpret_cast<Il2CppClass *>(handle);
     return reinterpret_cast<IppProperty>(il2cpp_class_get_properties(class_, reinterpret_cast<void*>(iter)));
+}
+
+IppObject ippGetClassTypeObject(IppClass handle) {
+    Il2CppClass *class_ = reinterpret_cast<Il2CppClass *>(handle);
+    Il2CppType* type = il2cpp_class_get_type(class_);
+    return reinterpret_cast<IppObject>(il2cpp_type_get_object(type));
 }

@@ -22,6 +22,12 @@ func (c *Class) GetNamespace() string {
 	return C.GoString(C.ippGetClassNamespace(c.handle))
 }
 
+func (c *Class) TypeObject() *Object {
+	return &Object{
+		Handle: C.ippGetClassTypeObject(c.handle),
+	}
+}
+
 func (c *Class) GetFlags() BindingFlags {
 	if c.handle == nil {
 		return 0

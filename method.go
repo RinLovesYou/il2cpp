@@ -1,9 +1,10 @@
 package il2cpp
 
 //#include "wrapper/Method.h"
+//#include <stdint.h>
 import "C"
 import (
-	"fmt"
+	"errors"
 	"unsafe"
 )
 
@@ -45,25 +46,50 @@ func (m *Method) Pointer() uintptr {
 	return uintptr(C.ippGetMethodPtr(m.handle))
 }
 
-func (m *Method) Invoke(args ...uintptr) (Object, error) {
+func (m *Method) Invoke(args ...uintptr) (*Object, error) {
 	var argss unsafe.Pointer
 	if len(args) > 0 {
-		argss = unsafe.Pointer(&args[0])
+		tempArgs := make([]C.uintptr_t, len(args))
+		for i, arg := range args {
+			tempArgs[i] = C.uintptr_t(arg)
+		}
+
+		argss = unsafe.Pointer(&tempArgs[0])
 	}
 	res := C.ippInvokeMethod(m.handle, nil, argss)
+
 	if res == nil {
-		return Object{}, fmt.Errorf("failed to invoke method")
+
+		if m.GetReturnType().GetName() != "System.Void" {
+			return nil, errors.New("Method returned null")
+		}
+
+		return nil, nil
 	}
 
-	return Object{
-		handle: res,
-	}, nil
+	return NewObject(unsafe.Pointer(res)), nil
 }
 
-func (m *Method) InvokeObject(obj *Object) (*Object, error) {
-	res := C.ippInvokeMethod(m.handle, obj.handle, nil)
+func (m *Method) InvokeObject(obj *Object, args ...uintptr) (*Object, error) {
+	var argss unsafe.Pointer
+	if len(args) > 0 {
+		tempArgs := make([]C.uintptr_t, len(args))
+		for i, arg := range args {
+			tempArgs[i] = C.uintptr_t(arg)
+		}
 
-	return &Object{
-		handle: res,
-	}, nil
+		argss = unsafe.Pointer(&tempArgs[0])
+	}
+	res := C.ippInvokeMethod(m.handle, obj.Handle, argss)
+
+	if res == nil {
+
+		if m.GetReturnType().GetName() != "System.Void" {
+			return nil, errors.New("Method returned null")
+		}
+
+		return nil, nil
+	}
+
+	return NewObject(unsafe.Pointer(res)), nil
 }

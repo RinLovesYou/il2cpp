@@ -15,8 +15,15 @@ typedef void* IppType;
 typedef void* IppObject;
 typedef void* IppField;
 typedef void* IppProperty;
+typedef void* IppString;
 
 typedef int IppBool;
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} IppVector3;
 
 #ifdef __cplusplus
 }

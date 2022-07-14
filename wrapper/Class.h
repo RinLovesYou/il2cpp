@@ -14,6 +14,7 @@ extern IppBool ippIsClassInterface(IppClass);
 extern IppMethod ippGetClassMethods(IppClass, size_t*);
 extern IppField ippGetClassFields(IppClass, size_t*);
 extern IppProperty ippGetClassProperties(IppClass handle, size_t* iter);
+extern IppObject ippGetClassTypeObject(IppClass);
 
 #ifdef __cplusplus
 }

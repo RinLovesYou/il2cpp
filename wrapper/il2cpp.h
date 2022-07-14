@@ -34,6 +34,10 @@ typedef PropertyInfo* (*Il2CppClassGetProperties)(Il2CppClass*, void*);
 typedef MethodInfo* (*Il2CppPropertyGetGetMethod)(PropertyInfo*);
 typedef MethodInfo* (*Il2CppPropertyGetSetMethod)(PropertyInfo*);
 typedef Il2CppObject* (*Il2CppRuntimeInvoke)(MethodInfo*, void*, void**, Il2CppException **exc);
+typedef void* (*Il2CppObjectUnbox)(Il2CppObject*);
+typedef Il2CppObject* (*Il2CppTypeGetObject)(Il2CppType*);
+typedef Il2CppType* (*Il2CppClassGetType)(Il2CppClass*);
+typedef Il2CppString* (*Il2CppStringNew)(const char*);
 
 const HMODULE GameAssembly = LoadLibraryA("GameAssembly.dll");
 
@@ -62,6 +66,10 @@ const Il2CppClassGetProperties il2cpp_class_get_properties = (Il2CppClassGetProp
 const Il2CppPropertyGetGetMethod il2cpp_property_get_get_method = (Il2CppPropertyGetGetMethod)GetProcAddress(GameAssembly, "il2cpp_property_get_get_method");
 const Il2CppPropertyGetSetMethod il2cpp_property_get_set_method = (Il2CppPropertyGetSetMethod)GetProcAddress(GameAssembly, "il2cpp_property_get_set_method");
 const Il2CppRuntimeInvoke il2cpp_runtime_invoke = (Il2CppRuntimeInvoke)GetProcAddress(GameAssembly, "il2cpp_runtime_invoke");
+const Il2CppObjectUnbox il2cpp_object_unbox = (Il2CppObjectUnbox)GetProcAddress(GameAssembly, "il2cpp_object_unbox");
+const Il2CppTypeGetObject il2cpp_type_get_object = (Il2CppTypeGetObject)GetProcAddress(GameAssembly, "il2cpp_type_get_object");
+const Il2CppClassGetType il2cpp_class_get_type = (Il2CppClassGetType)GetProcAddress(GameAssembly, "il2cpp_class_get_type");
+const Il2CppStringNew il2cpp_string_new = (Il2CppStringNew)GetProcAddress(GameAssembly, "il2cpp_string_new");
 
 #ifdef __cplusplus
 }

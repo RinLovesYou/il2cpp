@@ -5,7 +5,7 @@ import "C"
 import "unsafe"
 
 type Object struct {
-	handle   C.IppObject
+	Handle   C.IppObject
 	gchandle uint
 }
 
@@ -15,8 +15,8 @@ func NewObject(handle unsafe.Pointer) *Object {
 	}
 
 	return &Object{
-		handle: C.IppObject(handle),
-		//gchandle: uint(C.ippNewGcHandle(C.IppObject(handle), C.IppBool(0))),
+		Handle:   C.IppObject(handle),
+		gchandle: uint(C.ippNewGcHandle(C.IppObject(handle), C.IppBool(0))),
 	}
 }
 
@@ -25,21 +25,29 @@ func (o *Object) getHandle() C.IppObject {
 }
 
 func (o *Object) IsNull() bool {
-	return o.handle == nil
+	return o.Handle == nil
 }
 
 func (o *Object) Free() {
-	if o.handle == nil {
+	if o.Handle == nil {
 		return
 	}
 
 	C.ippFreeGcHandle(C.uint(o.gchandle))
 }
 
+func (o *Object) Unbox() unsafe.Pointer {
+	if o.Handle == nil {
+		return nil
+	}
+
+	return C.ippUnboxObject(o.Handle)
+}
+
 func (o *Object) UnboxString() string {
-	if o.handle == nil {
+	if o.Handle == nil {
 		return ""
 	}
 
-	return C.GoString(C.ippUnboxString(o.handle))
+	return C.GoString(C.ippUnboxString(o.Handle))
 }

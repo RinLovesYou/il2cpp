@@ -33,6 +33,15 @@ const char *ippUnboxString(IppObject handle)
    return utf8_encode(chars, length);
 }
 
+void* ippUnboxObject(IppObject handle) {
+   Il2CppObject *obj = reinterpret_cast<Il2CppObject *>(handle);
+   return il2cpp_object_unbox(obj);
+}
+
+IppString ippNewString(const char* str) {
+   return reinterpret_cast<IppString>(il2cpp_string_new(str));
+}
+
 const char* utf8_encode(uint16_t* wstr, int32_t length)
 {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, (LPCWCH)&wstr[0], (int)length, NULL, 0, NULL, NULL);
